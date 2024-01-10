@@ -62,9 +62,14 @@ def save_text_to_mp3(text, filename, poll_id, is_poll):
         key = "question" if is_poll else "comment"
         hunch_object = {"pollId": poll_id, key: text}
         console.print("Hunch Object: ", hunch_object)
+        hunch_object['question']=hunch_object[key]
 
-        tts_engine = TTSEngine(tts_provider, hunch_object)
+        tts_engine = TTSEngine(tts_provider, hunch_object, filename)
         success = tts_engine.run()
+        console.print("Filename: ",filename)
+        console.print("OS.PATH: ",os.path)
+        console.print("OS.PATH.EXISTS: ",os.path.exists(filename))
+        console.print("SUCCESS: ",success)
 
         if success and os.path.exists(filename):
             console.print(f"Audio file successfully created: {filename}")

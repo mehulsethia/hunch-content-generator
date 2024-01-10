@@ -78,7 +78,6 @@ def main(json_file_path):
         save_text_to_mp3(poll_text, poll_audio_filename, poll_id, is_poll=True)
         print(f"Poll Audio file created: {poll_audio_filename}")
 
-
         # Save audio for comments
         print(f"Saving audio for comments...")
         for i, comment in enumerate(comments):

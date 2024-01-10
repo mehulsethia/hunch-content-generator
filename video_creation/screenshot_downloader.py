@@ -248,11 +248,11 @@ def get_screenshots_of_reddit_posts(reddit_object: dict, screenshot_num: int):
                             location[i] = float("{:.2f}".format(location[i] * zoom))
                         page.screenshot(
                             clip=location,
-                            path=f"assets/temp/{reddit_id}/png/comment_{idx}.png",
+                            path=f"assets/temp/{reddit_id}/png/comment{idx}.png",
                         )
                     else:
                         page.locator(f"#t1_{comment['comment_id']}").screenshot(
-                            path=f"assets/temp/{reddit_id}/png/comment_{idx}.png"
+                            path=f"assets/temp/{reddit_id}/png/comment{idx}.png"
                         )
                 except TimeoutError:
                     del reddit_object["comments"]

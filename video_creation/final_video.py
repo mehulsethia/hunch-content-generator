@@ -172,23 +172,23 @@ def make_final_video(
         exit()
     if settings.config["settings"]["storymode"]:
         if settings.config["settings"]["storymodemethod"] == 0:
-            audio_clips = [ffmpeg.input(f"assets/temp/{poll_id}/mp3/title.mp3")]
+            audio_clips = [ffmpeg.input(f"assets/temp/{poll_id}/mp3/poll.mp3")]
             audio_clips.insert(1, ffmpeg.input(f"assets/temp/{poll_id}/mp3/postaudio.mp3"))
         elif settings.config["settings"]["storymodemethod"] == 1:
             audio_clips = [
                 ffmpeg.input(f"assets/temp/{poll_id}/mp3/postaudio-{i}.mp3")
                 for i in track(range(number_of_clips + 1), "Collecting the audio files...")
             ]
-            audio_clips.insert(0, ffmpeg.input(f"assets/temp/{poll_id}/mp3/title.mp3"))
+            audio_clips.insert(0, ffmpeg.input(f"assets/temp/{poll_id}/mp3/poll.mp3"))
 
     else:
         audio_clips = [
             ffmpeg.input(f"assets/temp/{poll_id}/mp3/comment{i}.mp3") for i in range(number_of_clips)
         ]
-        audio_clips.insert(0, ffmpeg.input(f"assets/temp/{poll_id}/mp3/title.mp3"))
+        audio_clips.insert(0, ffmpeg.input(f"assets/temp/{poll_id}/mp3/poll.mp3"))
 
         audio_clips_durations = []
-        for i in range(number_of_clips):
+        for i in range(0,number_of_clips):
             try:
                 duration = float(ffmpeg.probe(f"assets/temp/{poll_id}/mp3/comment{i}.mp3")["format"]["duration"])
                 audio_clips_durations.append(duration)
@@ -198,7 +198,7 @@ def make_final_video(
 
         audio_clips_durations.insert(
             0,
-            float(ffmpeg.probe(f"assets/temp/{poll_id}/mp3/title.mp3")["format"]["duration"]),
+            float(ffmpeg.probe(f"assets/temp/{poll_id}/mp3/poll.mp3")["format"]["duration"]),
         )
     audio_concat = ffmpeg.concat(*audio_clips, a=1, v=0)
     ffmpeg.output(
@@ -215,7 +215,7 @@ def make_final_video(
 
     image_clips.insert(
         0,
-        ffmpeg.input(f"assets/temp/{poll_id}/png/title.png")["v"].filter(
+        ffmpeg.input(f"assets/temp/{poll_id}/png/poll.png")["v"].filter(
             "scale", screenshot_width, -1
         ),
     )
@@ -230,7 +230,7 @@ def make_final_video(
         ]
         audio_clips_durations.insert(
             0,
-            float(ffmpeg.probe(f"assets/temp/{poll_id}/mp3/title.mp3")["format"]["duration"]),
+            float(ffmpeg.probe(f"assets/temp/{poll_id}/mp3/poll.mp3")["format"]["duration"]),
         )
         if settings.config["settings"]["storymodemethod"] == 0:
             image_clips.insert(
