@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 import json
+import ffmpeg
 from utils import settings
 from utils import console
 from utils.cleanup import cleanup
@@ -70,6 +71,9 @@ def main(json_file_path):
 
             browser.close()
 
+        # Save audio for comments and calculate total audio length
+        total_audio_length = 0.0
+
         # Process text and audio for poll and comments
         poll_text = poll_data['question']
         # Save audio for poll
@@ -87,18 +91,21 @@ def main(json_file_path):
             print(f"Comment Audio file created: {comment_audio_filename}")
 
         success = save_text_to_mp3(poll_text, poll_audio_filename, poll_id, is_poll=True)
-        if not success:
+        if success:
+            total_audio_length += float(ffmpeg.probe(poll_audio_filename)["format"]["duration"])
+        else:
             console.print_general(f"Failed to generate audio for poll: {poll_id}")
-            continue  # Skip this poll if audio generation fails
+            continue
 
         for i, comment in enumerate(comments):
             comment_text = comment['comment']
             comment_audio_filename = f"assets/temp/{poll_id}/mp3/comment{i}.mp3"
             success = save_text_to_mp3(comment_text, comment_audio_filename, poll_id, is_poll=False)
-            if not success:
+            if success:
+                total_audio_length += float(ffmpeg.probe(comment_audio_filename)["format"]["duration"])
+            else:
                 console.print_general(f"Failed to generate audio for comment {i} of poll: {poll_id}")
-                continue
-                # Decide how to handle this failure. Continue, break, or abort.
+
 
         # Background video and audio processing
         print(f"Processing background audio and video...")
@@ -109,8 +116,9 @@ def main(json_file_path):
         download_background_video(bg_config["video"])
         download_background_audio(bg_config["audio"])
 
-        length = 120  # Example length in seconds
-        number_of_screenshots = 1 + len(comments)  # Poll plus number of comments
+        # Set video length dynamically
+        length = total_audio_length
+        number_of_screenshots = 1 + len(comments)
 
         chop_background(bg_config, length, poll_id)
         make_final_video(number_of_screenshots, length, poll_data, bg_config)
