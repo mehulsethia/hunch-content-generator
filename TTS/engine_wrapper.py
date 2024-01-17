@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from typing import Tuple
 from moviepy.editor import AudioFileClip
+from pydub import AudioSegment
 from utils.voice import sanitize_text
 
 DEFAULT_MAX_LENGTH = 50
@@ -19,25 +20,43 @@ class TTSEngine:
         self.max_length = max_length
         self.length = 0
 
-    def run(self) -> Tuple[int, int]:
+    def run(self, speed: float = 0.5) -> Tuple[int, int]:
         idx = -1
         if self.hunch_object.get("question"):
-            self.call_tts(self.hunch_object["question"])
+            self.call_tts(self.hunch_object["question"], speed=speed)
         for idx, comment in enumerate(self.hunch_object.get("comments", [])):
             if self.length > self.max_length:
                 break
-            self.call_tts(f"comment{idx}", comment["comment"])
+            self.call_tts(f"comment{idx}", comment["comment"], speed=speed)
         return self.length, idx + 1
 
-    def call_tts(self, text: str):
+    def call_tts(self, text: str, speed: float = 0.5):
         try:
             self.tts_module.run(text, filepath=self.filename)
-            clip = AudioFileClip(self.filename)
-            self.length += clip.duration
+            
+            # Load the audio using pydub
+            audio = AudioSegment.from_mp3(self.filename)
+
+            if len(audio) > 0:
+            
+                # Adjust the speed using pydub
+                modified_audio = audio.speedup(playback_speed=speed)
+                
+                # Save the modified audio
+                modified_audio.export(self.filename, format="mp3")
+
+                # clip = AudioFileClip(self.filename)
+                # self.length += clip.duration
+                # Get the duration of the modified audio
+                self.length += len(modified_audio) / 1000.0
+            else:
+                print(f"Error: Loaded audio has zero length for {self.filename}")
+    
         except Exception as e:
             print(f"Error generating TTS for {self.filename}: {e}")
         finally:
-            clip.close() if 'clip' in locals() else None
+            # Ensure that the modified_audio is closed
+            modified_audio.close() if 'modified_audio' in locals() else None
 
 def process_text(text: str, clean: bool = True):
     return sanitize_text(text) if clean else text

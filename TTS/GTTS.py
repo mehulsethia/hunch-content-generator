@@ -9,12 +9,14 @@ class GTTS:
     def __init__(self):
         self.max_chars = 5000
         self.voices = []
+        self.tld = 'com.in'
 
     def run(self, text, filepath):
         tts = gTTS(
             text=text,
             lang=settings.config["reddit"]["thread"]["post_lang"] or "en",
-            slow=False,
+            tld=self.tld,
+                
         )
         tts.save(filepath)
 

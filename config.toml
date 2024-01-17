@@ -17,7 +17,7 @@ zoom = 1.0
 [settings.background]
 background_video = "minecraft"
 background_audio = "lofi"
-background_audio_volume = 0.15
+background_audio_volume = 0.45
 enable_extra_audio = false
 background_thumbnail = false
 background_thumbnail_font_family = "arial"
@@ -36,7 +36,7 @@ tiktok_sessionid = ""
 python_voice = "1"
 py_voice_num = "2"
 silence_duration = 0.3
-no_emojis = false
+no_emojis = true
 
 [reddit.creds]
 client_id = "eoJzf7n6Jk5h_H3l7-848g"

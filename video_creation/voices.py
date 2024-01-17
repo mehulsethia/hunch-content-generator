@@ -1,12 +1,14 @@
 from typing import Tuple
 import os
+import json
+import re
 from rich.console import Console
 from TTS.GTTS import GTTS
 from TTS.TikTok import TikTok
 from TTS.aws_polly import AWSPolly
 from TTS.engine_wrapper import TTSEngine
 from TTS.pyttsx import pyttsx
-from TTS.elevenlabs import elevenlabs
+# from TTS.elevenlabs import elevenlabs
 from TTS.streamlabs_polly import StreamlabsPolly
 from utils import settings
 from utils.console import print_table, print_step
@@ -19,39 +21,45 @@ TTSProviders = {
     "StreamlabsPolly": StreamlabsPolly,
     "TikTok": TikTok,
     "pyttsx": pyttsx,
-    "ElevenLabs": elevenlabs,
+    # "ElevenLabs": elevenlabs,
 }
 
+def remove_emojis(text):
+    # Emoji patterns
+    emoji_pattern = re.compile("["
+                               u"\U0001F600-\U0001F64F"  # emoticons
+                               u"\U0001F300-\U0001F5FF"  # symbols & pictographs
+                               u"\U0001F680-\U0001F6FF"  # transport & map symbols
+                               u"\U0001F1E0-\U0001F1FF"  # flags (iOS)
+                               u"\U00002702-\U000027B0"
+                               u"\U000024C2-\U0001F251"
+                               "]+", flags=re.UNICODE)
+    return emoji_pattern.sub(r'', text)
 
-# def save_text_to_mp3(reddit_obj) -> Tuple[int, int]:
-#     """Saves text to MP3 files.
+def load_abbreviations(file_path):
+    with open(file_path, "r") as file:
+        return json.load(file)
 
-#     Args:
-#         reddit_obj (): Reddit object received from reddit API in reddit/subreddit.py
-
-#     Returns:
-#         tuple[int,int]: (total length of the audio, the number of comments audio was generated for)
-#     """
-
-#     voice = settings.config["settings"]["tts"]["voice_choice"]
-#     if str(voice).casefold() in map(lambda _: _.casefold(), TTSProviders):
-#         text_to_mp3 = TTSEngine(get_case_insensitive_key_value(TTSProviders, voice), reddit_obj)
-#     else:
-#         while True:
-#             print_step("Please choose one of the following TTS providers: ")
-#             print_table(TTSProviders)
-#             choice = input("\n")
-#             if choice.casefold() in map(lambda _: _.casefold(), TTSProviders):
-#                 break
-#             print("Unknown Choice")
-#         text_to_mp3 = TTSEngine(get_case_insensitive_key_value(TTSProviders, choice), reddit_obj)
-#     return text_to_mp3.run()
+def expand_abbreviations(text, abbreviations_dict):
+    for abbr, expansion in abbreviations_dict.items():
+        text = text.replace(abbr, expansion)
+    return text
 
 def save_text_to_mp3(text, filename, poll_id, is_poll):
     console.print(f"Starting audio generation for {('poll' if is_poll else 'comment')} with text: {text}")
     console.print("Is Poll?: ", is_poll)
 
     try:
+
+        # Load abbreviations and expand the text
+        # abbreviations_file = '/Users/mehul/Desktop/hunch-content-generator/utils/abbreviations.json'
+        # abbreviations_dict = load_abbreviations(abbreviations_file)
+        # expanded_text = expand_abbreviations(text, abbreviations_dict)
+        # clean_text = remove_emojis(expanded_text)
+
+        # Remove emojis from the text
+        clean_text = remove_emojis(text)
+
         voice_choice = "streamlabspolly"
         tts_provider = get_case_insensitive_key_value(TTSProviders, voice_choice)
 
@@ -60,15 +68,13 @@ def save_text_to_mp3(text, filename, poll_id, is_poll):
             return False
 
         key = "question" if is_poll else "comment"
-        hunch_object = {"pollId": poll_id, key: text}
+        hunch_object = {"pollId": poll_id, key: clean_text}
         console.print("Hunch Object: ", hunch_object)
         hunch_object['question']=hunch_object[key]
 
         tts_engine = TTSEngine(tts_provider, hunch_object, filename)
         success = tts_engine.run()
         console.print("Filename: ",filename)
-        console.print("OS.PATH: ",os.path)
-        console.print("OS.PATH.EXISTS: ",os.path.exists(filename))
         console.print("SUCCESS: ",success)
 
         if success and os.path.exists(filename):

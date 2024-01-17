@@ -1,6 +1,7 @@
 import multiprocessing
 import os
 import re
+from tqdm import tqdm
 from os.path import exists  # Needs to be imported specifically
 from typing import Final
 from typing import Tuple, Any, Dict
@@ -163,44 +164,6 @@ def make_final_video(
 
     background_clip = ffmpeg.input(prepare_background(poll_id, W=W, H=H))
 
-    # # Gather all audio clips
-    # audio_clips = list()
-    # if number_of_clips == 0 and settings.config["settings"]["storymode"] == "false":
-    #     print(
-    #         "No audio clips to gather. Please use a different TTS or post."
-    #     )  # This is to fix the TypeError: unsupported operand type(s) for +: 'int' and 'NoneType'
-    #     exit()
-    # if settings.config["settings"]["storymode"]:
-    #     if settings.config["settings"]["storymodemethod"] == 0:
-    #         audio_clips = [ffmpeg.input(f"assets/temp/{poll_id}/mp3/poll.mp3")]
-    #         audio_clips.insert(1, ffmpeg.input(f"assets/temp/{poll_id}/mp3/postaudio.mp3"))
-    #     elif settings.config["settings"]["storymodemethod"] == 1:
-    #         audio_clips = [
-    #             ffmpeg.input(f"assets/temp/{poll_id}/mp3/postaudio-{i}.mp3")
-    #             for i in track(range(number_of_clips + 1), "Collecting the audio files...")
-    #         ]
-    #         audio_clips.insert(0, ffmpeg.input(f"assets/temp/{poll_id}/mp3/poll.mp3"))
-
-    # else:
-    #     audio_clips = [
-    #         ffmpeg.input(f"assets/temp/{poll_id}/mp3/comment{i}.mp3") for i in range(number_of_clips)
-    #     ]
-    #     audio_clips.insert(0, ffmpeg.input(f"assets/temp/{poll_id}/mp3/poll.mp3"))
-
-    #     audio_clips_durations = []
-    #     for i in range(0,number_of_clips):
-    #         try:
-    #             duration = float(ffmpeg.probe(f"assets/temp/{poll_id}/mp3/comment{i}.mp3")["format"]["duration"])
-    #             audio_clips_durations.append(duration)
-    #         except ffmpeg.Error as e:
-    #             print(f"Error probing audio file: assets/temp/{poll_id}/mp3/comment{i}.mp3")
-    #             print(e.stderr.decode("utf8"))
-
-    #     audio_clips_durations.insert(
-    #         0,
-    #         float(ffmpeg.probe(f"assets/temp/{poll_id}/mp3/poll.mp3")["format"]["duration"]),
-    #     )
-
     # Collect audio clips
     audio_clips = []
     audio_clips_durations = []
@@ -231,66 +194,10 @@ def make_final_video(
 
     image_clips.insert(
         0,
-        ffmpeg.input(f"assets/temp/{poll_id}/png/poll.png")["v"].filter(
+        ffmpeg.input(f"assets/temp/{poll_id}/png/poll-question.png")["v"].filter(
             "scale", screenshot_width, -1
         ),
     )
-
-    # current_time = 0
-    # if settings.config["settings"]["storymode"]:
-    #     audio_clips_durations = [
-    #         float(
-    #             ffmpeg.probe(f"assets/temp/{poll_id}/mp3/postaudio-{i}.mp3")["format"]["duration"]
-    #         )
-    #         for i in range(number_of_clips)
-    #     ]
-    #     audio_clips_durations.insert(
-    #         0,
-    #         float(ffmpeg.probe(f"assets/temp/{poll_id}/mp3/poll.mp3")["format"]["duration"]),
-    #     )
-    #     if settings.config["settings"]["storymodemethod"] == 0:
-    #         image_clips.insert(
-    #             1,
-    #             ffmpeg.input(f"assets/temp/{poll_id}/png/story_content.png").filter(
-    #                 "scale", screenshot_width, -1
-    #             ),
-    #         )
-    #         background_clip = background_clip.overlay(
-    #             image_clips[0],
-    #             enable=f"between(t,{current_time},{current_time + audio_clips_durations[0]})",
-    #             x="(main_w-overlay_w)/2",
-    #             y="(main_h-overlay_h)/2",
-    #         )
-    #         current_time += audio_clips_durations[0]
-    #     elif settings.config["settings"]["storymodemethod"] == 1:
-    #         for i in track(range(0, number_of_clips + 1), "Collecting the image files..."):
-    #             image_clips.append(
-    #                 ffmpeg.input(f"assets/temp/{poll_id}/png/img{i}.png")["v"].filter(
-    #                     "scale", screenshot_width, -1
-    #                 )
-    #             )
-    #             background_clip = background_clip.overlay(
-    #                 image_clips[i],
-    #                 enable=f"between(t,{current_time},{current_time + audio_clips_durations[i]})",
-    #                 x="(main_w-overlay_w)/2",
-    #                 y="(main_h-overlay_h)/2",
-    #             )
-    #             current_time += audio_clips_durations[i]
-    # else:
-    #     for i in range(0, number_of_clips + 1):
-    #         image_clips.append(
-    #             ffmpeg.input(f"assets/temp/{poll_id}/png/comment{i}.png")["v"].filter(
-    #                 "scale", screenshot_width, -1
-    #             )
-    #         )
-    #         image_overlay = image_clips[i].filter("colorchannelmixer", aa=opacity)
-    #         background_clip = background_clip.overlay(
-    #             image_overlay,
-    #             enable=f"between(t,{current_time},{current_time + audio_clips_durations[i]})",
-    #             x="(main_w-overlay_w)/2",
-    #             y="(main_h-overlay_h)/2",
-    #         )
-    #         current_time += audio_clips_durations[i]
 
     # Calculate total video length
     total_video_length = sum(audio_clips_durations)
@@ -299,8 +206,8 @@ def make_final_video(
 
     current_time = 0
     for i in range(len(audio_clips_durations)):
-    # Use poll.png for the first iteration and then comment{i}.png for subsequent iterations
-        image_path = f"assets/temp/{poll_id}/png/poll.png" if i == 0 else f"assets/temp/{poll_id}/png/comment{i-1}.png"
+    # Use poll-question.png for the first iteration and then comment{i}.png for subsequent iterations
+        image_path = f"assets/temp/{poll_id}/png/poll-question.png" if i == 0 else f"assets/temp/{poll_id}/png/comment{i-1}.png"
         if os.path.exists(image_path):
             image_clip = ffmpeg.input(image_path)["v"].filter("scale", screenshot_width, -1)
             image_overlay = image_clip.filter("colorchannelmixer", aa=opacity) if i > 0 else image_clip

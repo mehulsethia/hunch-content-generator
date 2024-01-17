@@ -17,6 +17,7 @@ from video_creation.background import (
 )
 from video_creation.final_video import make_final_video
 from utils.ffmpeg_install import ffmpeg_install
+from video_creation.poll_screenshot import take_poll_question_screenshot
 from video_creation.poll_screenshot import take_poll_screenshot
 from video_creation.comment_screenshot import take_comment_screenshot
 
@@ -59,52 +60,55 @@ def main(json_file_path):
             page = browser.new_page()
 
             # Take poll screenshot
+            poll_question_screenshot_path = poll_folder / "poll-question.png"
+            take_poll_question_screenshot(page, poll_url, str(poll_question_screenshot_path))
+
             poll_screenshot_path = poll_folder / "poll.png"
             take_poll_screenshot(page, poll_url, str(poll_screenshot_path))
+            # Process text and audio for poll and comments
+            poll_text = poll_data['question']
+            # Save audio for poll
+            print(f"Saving audio for poll...")
+            poll_audio_filename = f"assets/temp/{poll_id}/mp3/poll.mp3"
+            save_text_to_mp3(poll_text, poll_audio_filename, poll_id, is_poll=True)
+            print(f"Poll Audio file created: {poll_audio_filename}")
 
-            # Take comment screenshots
+            # Take comment screenshots and generate audio only for successful captures
             for i, comment in enumerate(comments):
                 comment_id = comment['commentId']
                 comment_url = f"https://hunch.in/comment/{slug}/{comment_id}"
                 comment_screenshot_path = poll_folder / f"comment{i}.png"
-                take_comment_screenshot(page, comment_url, str(comment_screenshot_path))
+                comment_screenshot_success = take_comment_screenshot(page, comment_url, str(comment_screenshot_path))
+
+                if comment_screenshot_success:
+                    # Screenshot capture successful, save audio for the comment
+                    comment_text = comment['comment']
+                    comment_audio_filename = f"assets/temp/{poll_id}/mp3/comment{i}.mp3"
+                    save_text_to_mp3(comment_text, comment_audio_filename, poll_id, is_poll=False)
+                    print(f"Comment Audio file created: {comment_audio_filename}")
+                else:
+                    print(f"Failed to capture screenshot for comment {i} of poll: {poll_id}")
 
             browser.close()
 
         # Save audio for comments and calculate total audio length
         total_audio_length = 0.0
 
-        # Process text and audio for poll and comments
-        poll_text = poll_data['question']
-        # Save audio for poll
-        print(f"Saving audio for poll...")
-        poll_audio_filename = f"assets/temp/{poll_id}/mp3/poll.mp3"
-        save_text_to_mp3(poll_text, poll_audio_filename, poll_id, is_poll=True)
-        print(f"Poll Audio file created: {poll_audio_filename}")
-
-        # Save audio for comments
-        print(f"Saving audio for comments...")
-        for i, comment in enumerate(comments):
-            comment_text = comment['comment']
-            comment_audio_filename = f"assets/temp/{poll_id}/mp3/comment{i}.mp3"
-            save_text_to_mp3(comment_text, comment_audio_filename, poll_id, is_poll=False)
-            print(f"Comment Audio file created: {comment_audio_filename}")
-
-        success = save_text_to_mp3(poll_text, poll_audio_filename, poll_id, is_poll=True)
-        if success:
-            total_audio_length += float(ffmpeg.probe(poll_audio_filename)["format"]["duration"])
-        else:
-            console.print_general(f"Failed to generate audio for poll: {poll_id}")
-            continue
+        # success = save_text_to_mp3(poll_text, poll_audio_filename, poll_id, is_poll=True)
+        # if success:
+        total_audio_length += float(ffmpeg.probe(poll_audio_filename)["format"]["duration"])
+        # else:
+        #     console.print_general(f"Failed to generate audio for poll: {poll_id}")
+        #     continue
 
         for i, comment in enumerate(comments):
-            comment_text = comment['comment']
-            comment_audio_filename = f"assets/temp/{poll_id}/mp3/comment{i}.mp3"
-            success = save_text_to_mp3(comment_text, comment_audio_filename, poll_id, is_poll=False)
-            if success:
-                total_audio_length += float(ffmpeg.probe(comment_audio_filename)["format"]["duration"])
-            else:
-                console.print_general(f"Failed to generate audio for comment {i} of poll: {poll_id}")
+            # comment_text = comment['comment']
+            # comment_audio_filename = f"assets/temp/{poll_id}/mp3/comment{i}.mp3"
+            # success = save_text_to_mp3(comment_text, comment_audio_filename, poll_id, is_poll=False)
+            # if success:
+            total_audio_length += float(ffmpeg.probe(comment_audio_filename)["format"]["duration"])
+            # else:
+            #     console.print_general(f"Failed to generate audio for comment {i} of poll: {poll_id}")
 
 
         # Background video and audio processing
