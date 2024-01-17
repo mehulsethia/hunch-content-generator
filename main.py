@@ -60,10 +60,10 @@ def main(json_file_path):
             page = browser.new_page()
 
             # Take poll screenshot
-            poll_question_screenshot_path = poll_folder / "poll-question.png"
+            poll_question_screenshot_path = poll_folder/"poll"/"poll-question.png"
             take_poll_question_screenshot(page, poll_url, str(poll_question_screenshot_path))
 
-            poll_screenshot_path = poll_folder / "poll.png"
+            poll_screenshot_path = poll_folder/"poll"/"poll.png"
             take_poll_screenshot(page, poll_url, str(poll_screenshot_path))
             # Process text and audio for poll and comments
             poll_text = poll_data['question']
@@ -77,7 +77,7 @@ def main(json_file_path):
             for i, comment in enumerate(comments):
                 comment_id = comment['commentId']
                 comment_url = f"https://hunch.in/comment/{slug}/{comment_id}"
-                comment_screenshot_path = poll_folder / f"comment{i}.png"
+                comment_screenshot_path = poll_folder/"comment"/f"comment{i}.png"
                 comment_screenshot_success = take_comment_screenshot(page, comment_url, str(comment_screenshot_path))
 
                 if comment_screenshot_success:

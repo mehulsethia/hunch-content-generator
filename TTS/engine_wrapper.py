@@ -20,7 +20,7 @@ class TTSEngine:
         self.max_length = max_length
         self.length = 0
 
-    def run(self, speed: float = 0.5) -> Tuple[int, int]:
+    def run(self, speed: float = 1.0) -> Tuple[int, int]:
         idx = -1
         if self.hunch_object.get("question"):
             self.call_tts(self.hunch_object["question"], speed=speed)
@@ -30,7 +30,7 @@ class TTSEngine:
             self.call_tts(f"comment{idx}", comment["comment"], speed=speed)
         return self.length, idx + 1
 
-    def call_tts(self, text: str, speed: float = 0.5):
+    def call_tts(self, text: str, speed: float = 1.0):
         try:
             self.tts_module.run(text, filepath=self.filename)
             

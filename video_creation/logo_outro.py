@@ -3,6 +3,9 @@ import subprocess
 import cv2
 from PIL import Image, ImageSequence
 import numpy as np
+from rich.console import Console
+
+console = Console()
 
 def extract_audio(video_path, output_path):
     try:
@@ -15,7 +18,7 @@ def extract_audio(video_path, output_path):
             '-y'
         ]
         subprocess.run(command, check=True)
-        print(f"Audio extracted successfully: {output_path}")
+        console.log(f"[bold green] Audio extracted successfully: {output_path}")
     except subprocess.CalledProcessError as e:
         print(f"Error extracting audio: {e}")
 
@@ -64,7 +67,7 @@ def overlay_gif_on_video(video_path, gif_path, output_path):
 
         cap.release()
         out.release()
-        print("Video processing completed successfully.")
+        console.log("[bold green] Video processing completed successfully.")
 
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -84,7 +87,7 @@ def combine_video_audio(video_path, audio_path, output_path):
             '-y'
         ]
         subprocess.run(command, check=True)
-        print(f"Video and audio combined successfully: {output_path}")
+        console.log(f"[bold green] Video and audio combined successfully: {output_path}")
     except subprocess.CalledProcessError as e:
         print(f"Error combining video and audio: {e}")
 
@@ -104,7 +107,7 @@ def reencode_video(input_path, output_path, resolution="1080x1920", fps=59.94):
             output_path
         ]
         subprocess.run(command, check=True)
-        print(f"Video re-encoded successfully: {output_path}")
+        console.log(f"[bold green] Video re-encoded successfully: {output_path}")
     except subprocess.CalledProcessError as e:
         print(f"Error re-encoding video: {e}")
         
@@ -121,7 +124,7 @@ def concatenate_videos(video1_path, video2_path, output_path):
             output_path
         ]
         subprocess.run(command, check=True)
-        print(f"Videos concatenated successfully: {output_path}")
+        console.log(f"[bold green] Videos concatenated successfully: {output_path}")
     except subprocess.CalledProcessError as e:
         print(f"Error during concatenation: {e}")
 

@@ -50,8 +50,6 @@ def make_final_video(
 
     opacity = settings.config["settings"]["opacity"]
 
-    #reddit_id = re.sub(r"[^\w\s-]", "", reddit_obj["thread_id"])
-
     allowOnlyTTSFolder: bool = (
         settings.config["settings"]["background"]["enable_extra_audio"]
         and settings.config["settings"]["background"]["background_audio_volume"] != 0
@@ -60,67 +58,61 @@ def make_final_video(
     print_step("Creating the final video 🎥")
 
     background_clip = ffmpeg.input(prepare_background(poll_id, W=W, H=H))
+    screenshot_width = int((W * 45) // 100)
 
     # Collect audio clips
     audio_clips = []
     audio_clips_durations = []
+
     poll_audio_path = f"assets/temp/{poll_id}/mp3/poll.mp3"
     if os.path.exists(poll_audio_path):
         audio_clips.append(ffmpeg.input(poll_audio_path))
-        duration = float(ffmpeg.probe(poll_audio_path)["format"]["duration"])
-        audio_clips_durations.append(duration)
+        audio_clips_durations.append(float(ffmpeg.probe(poll_audio_path)["format"]["duration"]))
+
     for i in range(number_of_clips):
         audio_path = f"assets/temp/{poll_id}/mp3/comment{i}.mp3"
         if os.path.exists(audio_path):
             audio_clips.append(ffmpeg.input(audio_path))
-            duration = float(ffmpeg.probe(audio_path)["format"]["duration"])
-            audio_clips_durations.append(duration)
+            audio_clips_durations.append(float(ffmpeg.probe(audio_path)["format"]["duration"]))
         else:
             print(f"Warning: Audio file not found: {audio_path}")
+
     audio_concat = ffmpeg.concat(*audio_clips, a=1, v=0)
     ffmpeg.output(audio_concat, f"assets/temp/{poll_id}/audio.mp3", **{"b:a": "192k"}).overwrite_output().run(quiet=True)
 
-
-    #console.log(f"[bold green] Video Will Be: {length} Seconds Long")
-
-    screenshot_width = int((W * 45) // 100)
     audio = ffmpeg.input(f"assets/temp/{poll_id}/audio.mp3")
     final_audio = merge_background_audio(audio, poll_id)
+
+    # Calculate total video length
+    total_video_length = sum(audio_clips_durations)
+    console.log(f"[bold green] Total Video Length: {total_video_length} seconds")
 
     image_clips = list()
 
     image_clips.insert(
         0,
-        ffmpeg.input(f"assets/temp/{poll_id}/png/poll-question.png")["v"].filter(
+        ffmpeg.input(f"assets/temp/{poll_id}/png/poll/poll-question.png")["v"].filter(
             "scale", screenshot_width, -1
         ),
     )
 
-    # Calculate total video length
-    total_video_length = sum(audio_clips_durations)
-
-    console.log(f"[bold green] Total Video Length: {total_video_length} seconds")
-
+    # Overlay images corresponding to audio clips
     current_time = 0
-    for i in range(len(audio_clips_durations)):
-    # Use poll-question.png for the first iteration and then comment{i}.png for subsequent iterations
-        image_path = f"assets/temp/{poll_id}/png/poll-question.png" if i == 0 else f"assets/temp/{poll_id}/png/comment{i-1}.png"
+    for i, duration in enumerate(audio_clips_durations):
+        image_path = f"assets/temp/{poll_id}/png/poll/poll-question.png" if i == 0 else f"assets/temp/{poll_id}/png/comment/comment{i-1}.png"
         if os.path.exists(image_path):
             image_clip = ffmpeg.input(image_path)["v"].filter("scale", screenshot_width, -1)
             image_overlay = image_clip.filter("colorchannelmixer", aa=opacity) if i > 0 else image_clip
             background_clip = background_clip.overlay(
                 image_overlay,
-                enable=f"between(t,{current_time},{current_time + audio_clips_durations[i]})",
+                enable=f"between(t,{current_time},{current_time + duration})",
                 x="(main_w-overlay_w)/2",
-                y="(main_h-overlay_h)/2",
+                y="(main_h-overlay_h)/2"
             )
-            current_time += audio_clips_durations[i]
+            print(f"Image overlay added: {image_path} (Start: {current_time}s, Duration: {duration}s)")
         else:
             print(f"Warning: Image file not found: {image_path}")
-
-    # title = re.sub(r"[^\w\s-]", "", reddit_obj["thread_title"])
-    # idx = re.sub(r"[^\w\s-]", "", reddit_obj["thread_id"])
-    # title_thumb = reddit_obj["thread_title"]
+        current_time += duration
             
     poll_title = poll_data["question"]
     title_thumb = poll_title[:50] 
@@ -202,7 +194,7 @@ def make_final_video(
         try:
             ffmpeg.output(
                 background_clip, 
-                ffmpeg.input(f"assets/temp/{poll_id}/audio.mp3"),
+                final_audio,
                 path,
                 f="mp4",
                 **{
@@ -272,7 +264,7 @@ def make_final_video(
     reencoded_main_video_path = f"assets/temp/{poll_id}/reencoded_main_video.mp4"
 
     # Final output path
-    final_output_path = f"assets/temp/{poll_id}/finalvideo.mp4"
+    final_output_path = f"assets/temp/{poll_id}/finalvideo_{poll_title}.mp4"
 
     # Ensure the directory exists
     os.makedirs(os.path.dirname(final_output_path), exist_ok=True)
