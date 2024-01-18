@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 import sys
+import os
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 import json
 import ffmpeg
 from utils import settings
+from rich.console import Console
 from utils import console
 from utils.cleanup import cleanup
 from utils.console import print_markdown, print_step
@@ -22,6 +24,8 @@ from video_creation.poll_screenshot import take_poll_screenshot
 from video_creation.comment_screenshot import take_comment_screenshot
 
 __VERSION__ = "3.2.1"
+
+console = Console()
 
 def main(json_file_path):
     with open(json_file_path, 'r') as file:
@@ -91,24 +95,38 @@ def main(json_file_path):
 
             browser.close()
 
+        # # Save audio for comments and calculate total audio length
+        # total_audio_length = 0.0
+
+        # # success = save_text_to_mp3(poll_text, poll_audio_filename, poll_id, is_poll=True)
+        # # if success:
+        # total_audio_length += float(ffmpeg.probe(poll_audio_filename)["format"]["duration"])
+        # # else:
+        # #     console.print_general(f"Failed to generate audio for poll: {poll_id}")
+        # #     continue
+
+        # for i, comment in enumerate(comments):
+        #     # comment_text = comment['comment']
+        #     # comment_audio_filename = f"assets/temp/{poll_id}/mp3/comment{i}.mp3"
+        #     # success = save_text_to_mp3(comment_text, comment_audio_filename, poll_id, is_poll=False)
+        #     # if success:
+        #     total_audio_length += float(ffmpeg.probe(comment_audio_filename)["format"]["duration"])
+        #     # else:
+        #     #     console.print_general(f"Failed to generate audio for comment {i} of poll: {poll_id}")
+            
         # Save audio for comments and calculate total audio length
+            
         total_audio_length = 0.0
 
-        # success = save_text_to_mp3(poll_text, poll_audio_filename, poll_id, is_poll=True)
-        # if success:
-        total_audio_length += float(ffmpeg.probe(poll_audio_filename)["format"]["duration"])
-        # else:
-        #     console.print_general(f"Failed to generate audio for poll: {poll_id}")
-        #     continue
+        poll_audio_path = f"assets/temp/{poll_id}/mp3/poll.mp3"
+        if os.path.exists(poll_audio_path):
+            total_audio_length += float(ffmpeg.probe(poll_audio_path)["format"]["duration"])
 
-        for i, comment in enumerate(comments):
-            # comment_text = comment['comment']
-            # comment_audio_filename = f"assets/temp/{poll_id}/mp3/comment{i}.mp3"
-            # success = save_text_to_mp3(comment_text, comment_audio_filename, poll_id, is_poll=False)
-            # if success:
-            total_audio_length += float(ffmpeg.probe(comment_audio_filename)["format"]["duration"])
-            # else:
-            #     console.print_general(f"Failed to generate audio for comment {i} of poll: {poll_id}")
+        for i in range(len(comments)):
+            comment_audio_path = f"assets/temp/{poll_id}/mp3/comment{i}.mp3"
+            if os.path.exists(comment_audio_path):
+                total_audio_length += float(ffmpeg.probe(comment_audio_path)["format"]["duration"])
+
 
 
         # Background video and audio processing
@@ -120,8 +138,16 @@ def main(json_file_path):
         download_background_video(bg_config["video"])
         download_background_audio(bg_config["audio"])
 
+        # concatenated_audio_path = f"assets/temp/{poll_id}/audio.mp3"
+        # total_audio_length = float(ffmpeg.probe(concatenated_audio_path)["format"]["duration"])
+
+        # console.log(f"[bold blue] Total concatenated audio length: {total_audio_length} seconds")
+
+
         # Set video length dynamically
         length = total_audio_length
+        console.log(f"[bold blue] Total audio length: {length} seconds")
+
         number_of_screenshots = 1 + len(comments)
 
         chop_background(bg_config, length, poll_id)

@@ -5,7 +5,7 @@ from moviepy.editor import AudioFileClip
 from pydub import AudioSegment
 from utils.voice import sanitize_text
 
-DEFAULT_MAX_LENGTH = 50
+DEFAULT_MAX_LENGTH = 200
 
 class TTSEngine:
     def __init__(self, tts_module, hunch_object: dict, filename: str, path: str = "assets/temp/", max_length: int = DEFAULT_MAX_LENGTH):
@@ -20,7 +20,7 @@ class TTSEngine:
         self.max_length = max_length
         self.length = 0
 
-    def run(self, speed: float = 1.0) -> Tuple[int, int]:
+    def run(self, speed: float = 0.5) -> Tuple[int, int]:
         idx = -1
         if self.hunch_object.get("question"):
             self.call_tts(self.hunch_object["question"], speed=speed)
@@ -30,7 +30,7 @@ class TTSEngine:
             self.call_tts(f"comment{idx}", comment["comment"], speed=speed)
         return self.length, idx + 1
 
-    def call_tts(self, text: str, speed: float = 1.0):
+    def call_tts(self, text: str, speed: float = 0.5):
         try:
             self.tts_module.run(text, filepath=self.filename)
             

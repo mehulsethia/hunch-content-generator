@@ -40,7 +40,9 @@ def make_final_video(
         background_config (Tuple[str, str, str, Any]): The background config to use.
     """
 
-    print("Poll Data: ",poll_data)
+    console.log(f"[bold blue] Length parameter received in make_final_video: {length} seconds")
+
+    console.log("[bold blue] Poll Data: ",poll_data)
 
     poll_id = poll_data["pollId"]
 
@@ -85,7 +87,10 @@ def make_final_video(
 
     # Calculate total video length
     total_video_length = sum(audio_clips_durations)
-    console.log(f"[bold green] Total Video Length: {total_video_length} seconds")
+    length = total_video_length
+    
+    console.log(f"[bold blue] Total Length: {length} seconds")
+    console.log(f"[bold blue] Total Video Length without outro: {total_video_length} seconds")
 
     image_clips = list()
 
@@ -96,9 +101,13 @@ def make_final_video(
         ),
     )
 
+    audio_length = enumerate(audio_clips_durations)
+    console.log("[bold green] i value: ", audio_length)
+
     # Overlay images corresponding to audio clips
     current_time = 0
-    for i, duration in enumerate(audio_clips_durations):
+    for i, duration in audio_length:
+        console.log("[bold green] i value: ", i, "Duration: ", {duration})
         image_path = f"assets/temp/{poll_id}/png/poll/poll-question.png" if i == 0 else f"assets/temp/{poll_id}/png/comment/comment{i-1}.png"
         if os.path.exists(image_path):
             image_clip = ffmpeg.input(image_path)["v"].filter("scale", screenshot_width, -1)
@@ -186,7 +195,7 @@ def make_final_video(
         pbar.update(status - old_percentage)
 
     defaultPath = f"results/{subreddit}"
-    with ProgressFfmpeg(length, on_update_example) as progress:
+    with ProgressFfmpeg(total_video_length, on_update_example) as progress:
         path = defaultPath + f"/{filename}"
         path = (
             path[:251] + ".mp4"
@@ -220,7 +229,7 @@ def make_final_video(
             path[:251] + ".mp4"
         )  # Prevent a error by limiting the path length, do not change this.
         print_step("Rendering the Only TTS Video 🎥")
-        with ProgressFfmpeg(length, on_update_example) as progress:
+        with ProgressFfmpeg(total_video_length, on_update_example) as progress:
             try:
                 ffmpeg.output(
                     background_clip,
