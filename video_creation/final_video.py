@@ -15,6 +15,7 @@ from utils.cleanup import cleanup
 from utils.console import print_step, print_substep
 from utils.thumbnail import create_thumbnail
 from utils.videos import save_data
+from utils.playback_control import video_playback_control
 from utils import settings
 
 from video_creation.final_video_resources import ProgressFfmpeg
@@ -31,6 +32,7 @@ def make_final_video(
     length: int,
     poll_data: dict,
     background_config: Dict[str, Tuple],
+    answered_poll_duration
 ):
     """Gathers audio clips, gathers all screenshots, stitches them together and saves the final video to assets/temp
     Args:
@@ -71,6 +73,11 @@ def make_final_video(
         audio_clips.append(ffmpeg.input(poll_audio_path))
         audio_clips_durations.append(float(ffmpeg.probe(poll_audio_path)["format"]["duration"]))
 
+    answered_poll_audio_path = f"assets/video-resources/answered-poll.mp3"
+    if os.path.exists(answered_poll_audio_path):
+        audio_clips.append(ffmpeg.input(answered_poll_audio_path))
+        audio_clips_durations.append(float(ffmpeg.probe(answered_poll_audio_path)["format"]["duration"]))
+
     for i in range(number_of_clips):
         audio_path = f"assets/temp/{poll_id}/mp3/comment{i}.mp3"
         if os.path.exists(audio_path):
@@ -78,6 +85,7 @@ def make_final_video(
             audio_clips_durations.append(float(ffmpeg.probe(audio_path)["format"]["duration"]))
         else:
             print(f"Warning: Audio file not found: {audio_path}")
+
 
     audio_concat = ffmpeg.concat(*audio_clips, a=1, v=0)
     ffmpeg.output(audio_concat, f"assets/temp/{poll_id}/audio.mp3", **{"b:a": "192k"}).overwrite_output().run(quiet=True)
@@ -101,17 +109,47 @@ def make_final_video(
         ),
     )
 
+    poll_image_path = f"assets/temp/{poll_id}/png/poll/poll.png"
+
+    image_clips.append(ffmpeg.input(poll_image_path)["v"].filter(
+            "scale", screenshot_width, -1
+        ),
+    )
+
+    # # Overlay for poll.png
+    # current_time = 0
+    # poll_image_path = f"assets/temp/{poll_id}/png/poll/poll.png"
+    # if os.path.exists(poll_image_path):
+    #     poll_image_clip = ffmpeg.input(poll_image_path)["v"].filter("scale", screenshot_width, -1)
+    #     background_clip = background_clip.overlay(
+    #         poll_image_clip.filter("colorchannelmixer", aa=opacity),
+    #         enable=f"between(t,{current_time},{current_time + 3})",  # 3 seconds for answered-poll.mp3
+    #         x="(main_w-overlay_w)/2",
+    #         y="(main_h-overlay_h)/2"
+    #     )
+    #     current_time += answered_poll_duration  # Duration for answered-poll.mp3
+
     audio_length = enumerate(audio_clips_durations)
     console.log("[bold green] i value: ", audio_length)
 
-    # Overlay images corresponding to audio clips
     current_time = 0
+    # Overlay images corresponding to audio clips
     for i, duration in audio_length:
         console.log("[bold green] i value: ", i, "Duration: ", {duration})
-        image_path = f"assets/temp/{poll_id}/png/poll/poll-question.png" if i == 0 else f"assets/temp/{poll_id}/png/comment/comment{i-1}.png"
+        # image_path = f"assets/temp/{poll_id}/png/poll/poll-question.png" if i == 0 else f"assets/temp/{poll_id}/png/comment/comment{i-1}.png"
+
+        # Select the appropriate image path based on the index
+        if i == 0:
+            image_path = f"assets/temp/{poll_id}/png/poll/poll-question.png"
+        elif i == 1:
+            image_path = f"assets/temp/{poll_id}/png/poll/poll.png"
+        else:
+            image_path = f"assets/temp/{poll_id}/png/comment/comment{i-2}.png"
+
+
         if os.path.exists(image_path):
             image_clip = ffmpeg.input(image_path)["v"].filter("scale", screenshot_width, -1)
-            image_overlay = image_clip.filter("colorchannelmixer", aa=opacity) if i > 0 else image_clip
+            image_overlay = image_clip.filter("colorchannelmixer", aa=opacity) if i > 1 else image_clip
             background_clip = background_clip.overlay(
                 image_overlay,
                 enable=f"between(t,{current_time},{current_time + duration})",
@@ -260,10 +298,14 @@ def make_final_video(
 
 
     video_path = path
+    slowed_video_path = f"assets/temp/{poll_id}/slowed_video.mp4"   # Path for the slowed-down video
+
+    # Call the function to slow down the video
+    video_playback_control(video_path, slowed_video_path)
 
     # Path to the outro video and logo
-    outro_video_path = "/Users/mehul/Desktop/RedditVideoMakerBot/assets/outro/outro.mp4"
-    logo_gif_path = "/Users/mehul/Desktop/RedditVideoMakerBot/assets/logo/logo_animation_1.gif"
+    outro_video_path = "assets/video-resources/outro.mp4"
+    logo_gif_path = "assets/video-resources/logo_animation_1.gif"
 
     # Paths for intermediate videos
     audio_path = f"assets/temp/{poll_id}/extracted_audio.aac"
@@ -273,16 +315,16 @@ def make_final_video(
     reencoded_main_video_path = f"assets/temp/{poll_id}/reencoded_main_video.mp4"
 
     # Final output path
-    final_output_path = f"assets/temp/{poll_id}/finalvideo_{poll_title}.mp4"
+    final_output_path = f"./results/{subreddit}/finalvideo/finalvideo_{poll_title}.mp4"
 
     # Ensure the directory exists
     os.makedirs(os.path.dirname(final_output_path), exist_ok=True)
 
     # Extract audio from the original video
-    extract_audio(video_path, audio_path)
+    extract_audio(slowed_video_path, audio_path)
 
     # Process the video frames (overlay GIF)
-    overlay_gif_on_video(video_path, logo_gif_path, processed_video_path)
+    overlay_gif_on_video(slowed_video_path, logo_gif_path, processed_video_path)
 
     # Combine the processed video with the extracted audio
     combine_video_audio(processed_video_path, audio_path, intermediate_output_path)

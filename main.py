@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import sys
 import os
+import time
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 import json
@@ -27,6 +28,18 @@ __VERSION__ = "3.2.1"
 
 console = Console()
 
+def video_exists(poll_id, videos_json_path='video_creation/data/videos.json'):
+    try:
+        with open(videos_json_path, 'r') as file:
+            videos = json.load(file)
+            for video in videos:
+                if video['id'] == poll_id:
+                    return True
+    except FileNotFoundError:
+        # If the videos.json file doesn't exist, return False
+        return False
+    return False
+
 def main(json_file_path):
     with open(json_file_path, 'r') as file:
         data = json.load(file)
@@ -46,12 +59,15 @@ def main(json_file_path):
             'commentId': item['commentId'],
             'comment': item['comment']
         })
-
-    # Process each poll and its comments
+        
     for poll_id, poll_data in polls.items():
         slug = poll_data['slug']
         poll_url = f"https://hunch.in/poll/{slug}"
         comments = poll_data['comments']
+
+        if video_exists(poll_id):
+            print(f"Video for poll ID {poll_id} already exists. Skipping...")
+            continue
 
         # Create directories for poll
         poll_folder = Path(f"assets/temp/{poll_id}/png")
@@ -126,7 +142,12 @@ def main(json_file_path):
             comment_audio_path = f"assets/temp/{poll_id}/mp3/comment{i}.mp3"
             if os.path.exists(comment_audio_path):
                 total_audio_length += float(ffmpeg.probe(comment_audio_path)["format"]["duration"])
-
+        
+        # Add answered-poll.mp3 duration
+        answered_poll_audio_path = f"assets/video-resources/answered-poll.mp3"
+        if os.path.exists(answered_poll_audio_path):
+            answered_poll_duration = float(ffmpeg.probe(answered_poll_audio_path)["format"]["duration"])
+            total_audio_length += answered_poll_duration
 
 
         # Background video and audio processing
@@ -151,7 +172,7 @@ def main(json_file_path):
         number_of_screenshots = 1 + len(comments)
 
         chop_background(bg_config, length, poll_id)
-        make_final_video(number_of_screenshots, length, poll_data, bg_config)
+        make_final_video(number_of_screenshots + 1, length, poll_data, bg_config, answered_poll_duration)
 
         # Cleanup for this poll
         cleanup(poll_id)
@@ -163,5 +184,5 @@ if __name__ == "__main__":
         f"{directory}/utils/.config.template.toml", f"{directory}/config.toml"
     )
     config is False and sys.exit()
-    json_file_path = "assets/bigquery/top_voted_polls_and_top_comments_for_each_of_these_polls.json"  # Replace with actual JSON file path
+    json_file_path = "assets/bigquery/top_US_voted_polls_and_top_comments_for_each_of_these_polls.json"  # Replace with actual JSON file path
     main(json_file_path)
