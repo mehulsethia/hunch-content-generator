@@ -1,6 +1,7 @@
 import multiprocessing
 import os
 import re
+from rich.console import Console
 from tqdm import tqdm
 from os.path import exists  # Needs to be imported specifically
 from typing import Final
@@ -24,6 +25,8 @@ import threading
 import time
 
 from video_creation.logo_outro import *
+
+console = Console()
 
 class ProgressFfmpeg(threading.Thread):
     def __init__(self, vid_duration_seconds, progress_update_callback):
@@ -107,7 +110,7 @@ def prepare_background(poll_id: str, W: int, H: int) -> str:
         exit(1)
     return output_path
 
-
+        
 def merge_background_audio(audio: ffmpeg, poll_id: str):
     """Gather an audio and merge with assets/backgrounds/background.mp3
     Args:
@@ -115,15 +118,35 @@ def merge_background_audio(audio: ffmpeg, poll_id: str):
         reddit_id (str): The ID of subreddit
     """
     background_audio_volume = settings.config["settings"]["background"]["background_audio_volume"]
+    console.log(f"[bold blue] Background Audio Volumne: {background_audio_volume}")
+
     if background_audio_volume == 0:
         return audio  # Return the original audio
     else:
-        # sets volume to config
-        bg_audio = ffmpeg.input(f"assets/temp/{poll_id}/background.mp3").filter(
-            "volume",
-            background_audio_volume,
-        )
-        # Merges audio and background_audio
-        merged_audio = ffmpeg.filter([audio, bg_audio], "amix", duration="longest")
-        return merged_audio  # Return merged audio
+        # # sets volume to config
+        # bg_audio = ffmpeg.input(f"assets/temp/{poll_id}/background.mp3").filter(
+        #     "volume",
+        #     background_audio_volume,
+        # )
+        # # Merges audio and background_audio
+        # merged_audio = ffmpeg.filter([audio, bg_audio], "amix", duration="longest")
+        # return merged_audio  # Return merged audio
+
+        # Load the original background audio file
+        bg_audio = ffmpeg.input(f"assets/temp/{poll_id}/background.mp3")
+
+        # Apply the volume setting to the background audio
+        adjusted_bg_audio = bg_audio.filter("volume", volume=background_audio_volume)
+
+        # Save the adjusted background audio to a temporary file
+        adjusted_bg_audio_path = f"assets/temp/{poll_id}/adjusted_background.mp3"
+        ffmpeg.output(adjusted_bg_audio, adjusted_bg_audio_path).overwrite_output().run()
+
+        # Load the adjusted background audio for merging
+        adjusted_bg_audio = ffmpeg.input(adjusted_bg_audio_path)
+
+        # Merge the TTS audio and the adjusted background audio
+        merged_audio = ffmpeg.filter([audio, adjusted_bg_audio], "amix", duration="longest")
+
+        return merged_audio  # Return the merged audio
 

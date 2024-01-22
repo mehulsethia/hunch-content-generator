@@ -3,6 +3,7 @@ import subprocess
 import cv2
 from PIL import Image, ImageSequence
 import numpy as np
+import subprocess
 from rich.console import Console
 
 console = Console()
@@ -112,6 +113,10 @@ def reencode_video(input_path, output_path, resolution="1080x1920", fps=59.94):
         print(f"Error re-encoding video: {e}")
         
 def concatenate_videos(video1_path, video2_path, output_path):
+
+    console = Console()
+    xfade_duration = 2  # Duration of crossfade in seconds
+
     try:
         command = [
             'ffmpeg',
@@ -123,8 +128,8 @@ def concatenate_videos(video1_path, video2_path, output_path):
             '-map', '[outa]',
             output_path
         ]
-        subprocess.run(command, check=True)
-        console.log(f"[bold green] Videos concatenated successfully: {output_path}")
+        subprocess.run(command, check=True, stderr=subprocess.PIPE)
+        console.log(f"[bold green] Videos concatenated with crossfade transition successfully: {output_path}")
     except subprocess.CalledProcessError as e:
         print(f"Error during concatenation: {e}")
 

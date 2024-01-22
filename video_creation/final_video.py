@@ -32,7 +32,6 @@ def make_final_video(
     length: int,
     poll_data: dict,
     background_config: Dict[str, Tuple],
-    answered_poll_duration
 ):
     """Gathers audio clips, gathers all screenshots, stitches them together and saves the final video to assets/temp
     Args:
@@ -92,6 +91,12 @@ def make_final_video(
 
     audio = ffmpeg.input(f"assets/temp/{poll_id}/audio.mp3")
     final_audio = merge_background_audio(audio, poll_id)
+
+    # Duration of the fade-out effect in seconds
+    fade_duration = 3
+
+    # Apply the audio fade-out effect at the end of the audio track
+    final_audio = final_audio.filter('afade', type='out', start_time=length - fade_duration, duration=fade_duration)
 
     # Calculate total video length
     total_video_length = sum(audio_clips_durations)
@@ -304,14 +309,14 @@ def make_final_video(
     video_playback_control(video_path, slowed_video_path)
 
     # Path to the outro video and logo
-    outro_video_path = "assets/video-resources/outro.mp4"
+    # outro_video_path = "assets/video-resources/outro.mp4"
     logo_gif_path = "assets/video-resources/logo_animation_1.gif"
 
     # Paths for intermediate videos
     audio_path = f"assets/temp/{poll_id}/extracted_audio.aac"
     processed_video_path = f"assets/temp/{poll_id}/processed_video.mp4" 
     intermediate_output_path = f"assets/temp/{poll_id}/intermediate_video.mp4" 
-    reencoded_outro_video_path = f"assets/temp/{poll_id}/reencoded_outro_video.mp4"
+    reencoded_outro_video_path = f"assets/video-resources/reencoded_outro_video copy.mp4"
     reencoded_main_video_path = f"assets/temp/{poll_id}/reencoded_main_video.mp4"
 
     # Final output path
@@ -331,7 +336,8 @@ def make_final_video(
 
     # Re-encode the videos to match main video properties
     reencode_video(intermediate_output_path, reencoded_main_video_path)
-    reencode_video(outro_video_path, reencoded_outro_video_path)
+    # reencode_video(outro_video_path, reencoded_outro_video_path)
+
     concatenate_videos(intermediate_output_path, reencoded_outro_video_path, final_output_path)
 
     print_step("Removing temporary files 🗑")

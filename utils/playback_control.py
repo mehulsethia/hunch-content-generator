@@ -2,7 +2,7 @@ import ffmpeg
 from ffmpeg import input, output, run
 import os
 
-def video_playback_control(input_video_path, output_video_path, playback_speed=0.9):
+def video_playback_control(input_video_path, output_video_path, playback_speed=1.0):
 
     # Create separate input streams for video and audio
     video_input = ffmpeg.input(input_video_path)

@@ -17,7 +17,7 @@ zoom = 1.0
 [settings.background]
 background_video = "minecraft"
 background_audio = "lofi"
-background_audio_volume = 0.25
+background_audio_volume = 0.1
 enable_extra_audio = false
 background_thumbnail = false
 background_thumbnail_font_family = "arial"

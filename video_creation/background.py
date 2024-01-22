@@ -132,8 +132,8 @@ def chop_background(background_config: Dict[str, Tuple], video_length: int, poll
         print_step("Volume was set to 0. Skipping background audio creation . . .")
     else:
         print_step("Finding a spot in the backgrounds audio to chop...✂️")
-        audio_choice = f"{background_config['audio'][2]}-{background_config['audio'][1]}"
-        background_audio = AudioFileClip(f"assets/backgrounds/audio/{audio_choice}")
+        audio_choice = f"assets/video-resources/background_audio_reduced_volume.mp3"
+        background_audio = AudioFileClip(audio_choice)
         start_time_audio, end_time_audio = get_start_and_end_times(
             video_length, background_audio.duration
         )

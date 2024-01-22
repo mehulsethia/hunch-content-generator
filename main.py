@@ -157,7 +157,7 @@ def main(json_file_path):
             "audio": get_background_config("audio"),
         }
         download_background_video(bg_config["video"])
-        download_background_audio(bg_config["audio"])
+        #download_background_audio(bg_config["audio"])
 
         # concatenated_audio_path = f"assets/temp/{poll_id}/audio.mp3"
         # total_audio_length = float(ffmpeg.probe(concatenated_audio_path)["format"]["duration"])
@@ -172,7 +172,7 @@ def main(json_file_path):
         number_of_screenshots = 1 + len(comments)
 
         chop_background(bg_config, length, poll_id)
-        make_final_video(number_of_screenshots + 1, length, poll_data, bg_config, answered_poll_duration)
+        make_final_video(number_of_screenshots + 1, length, poll_data, bg_config)
 
         # Cleanup for this poll
         cleanup(poll_id)
