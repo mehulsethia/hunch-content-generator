@@ -72,7 +72,7 @@ def make_final_video(
         audio_clips.append(ffmpeg.input(poll_audio_path))
         audio_clips_durations.append(float(ffmpeg.probe(poll_audio_path)["format"]["duration"]))
 
-    answered_poll_audio_path = f"assets/video-resources/answered-poll.mp3"
+    answered_poll_audio_path = f"assets/video-resources/poll-audio.mp3"
     if os.path.exists(answered_poll_audio_path):
         audio_clips.append(ffmpeg.input(answered_poll_audio_path))
         audio_clips_durations.append(float(ffmpeg.probe(answered_poll_audio_path)["format"]["duration"]))
@@ -93,7 +93,7 @@ def make_final_video(
     final_audio = merge_background_audio(audio, poll_id)
 
     # Duration of the fade-out effect in seconds
-    fade_duration = 3
+    fade_duration = 2
 
     # Apply the audio fade-out effect at the end of the audio track
     final_audio = final_audio.filter('afade', type='out', start_time=length - fade_duration, duration=fade_duration)

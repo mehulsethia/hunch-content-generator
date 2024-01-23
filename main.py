@@ -143,8 +143,8 @@ def main(json_file_path):
             if os.path.exists(comment_audio_path):
                 total_audio_length += float(ffmpeg.probe(comment_audio_path)["format"]["duration"])
         
-        # Add answered-poll.mp3 duration
-        answered_poll_audio_path = f"assets/video-resources/answered-poll.mp3"
+        # Add poll-audio.mp3 duration
+        answered_poll_audio_path = f"assets/video-resources/poll-audio.mp3"
         if os.path.exists(answered_poll_audio_path):
             answered_poll_duration = float(ffmpeg.probe(answered_poll_audio_path)["format"]["duration"])
             total_audio_length += answered_poll_duration
