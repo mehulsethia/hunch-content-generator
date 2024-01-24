@@ -12,6 +12,7 @@ from rich.console import Console
 from rich.progress import track
 
 from utils.cleanup import cleanup
+from utils.cleanup import cleanup_after_video_creation
 from utils.console import print_step, print_substep
 from utils.thumbnail import create_thumbnail
 from utils.videos import save_data
@@ -341,6 +342,7 @@ def make_final_video(
     concatenate_videos(intermediate_output_path, reencoded_outro_video_path, final_output_path)
 
     print_step("Removing temporary files 🗑")
+    cleanup_after_video_creation(poll_id, "hunch")
     cleanups = cleanup(poll_id)
     print_substep(f"Removed {cleanups} temporary files 🗑")
     print_step("Done! 🎉 The video is in the results folder 📁")
