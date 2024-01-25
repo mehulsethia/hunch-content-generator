@@ -110,27 +110,6 @@ def main(json_file_path):
                     print(f"Failed to capture screenshot for comment {i} of poll: {poll_id}")
 
             browser.close()
-
-        # # Save audio for comments and calculate total audio length
-        # total_audio_length = 0.0
-
-        # # success = save_text_to_mp3(poll_text, poll_audio_filename, poll_id, is_poll=True)
-        # # if success:
-        # total_audio_length += float(ffmpeg.probe(poll_audio_filename)["format"]["duration"])
-        # # else:
-        # #     console.print_general(f"Failed to generate audio for poll: {poll_id}")
-        # #     continue
-
-        # for i, comment in enumerate(comments):
-        #     # comment_text = comment['comment']
-        #     # comment_audio_filename = f"assets/temp/{poll_id}/mp3/comment{i}.mp3"
-        #     # success = save_text_to_mp3(comment_text, comment_audio_filename, poll_id, is_poll=False)
-        #     # if success:
-        #     total_audio_length += float(ffmpeg.probe(comment_audio_filename)["format"]["duration"])
-        #     # else:
-        #     #     console.print_general(f"Failed to generate audio for comment {i} of poll: {poll_id}")
-            
-        # Save audio for comments and calculate total audio length
             
         total_audio_length = 0.0
 

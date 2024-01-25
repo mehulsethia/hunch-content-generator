@@ -16,8 +16,8 @@ def take_comment_screenshot(page, url, filename):
             comment_selector = '.rootComment.highlight'
 
             # Wait for the necessary elements to load
-            page.wait_for_selector(container_selector, timeout=10000)
-            page.wait_for_selector(comment_selector, timeout=10000)
+            page.wait_for_selector(container_selector, timeout=100000)
+            page.wait_for_selector(comment_selector, timeout=100000)
 
             # Scroll the comment into the middle of the viewport
             page.evaluate(f"document.querySelector('{comment_selector}').scrollIntoView({{behavior: 'auto', block: 'center', inline: 'center'}})")
