@@ -4,7 +4,6 @@ from gtts import gTTS
 
 from utils import settings
 
-
 class GTTS:
     def __init__(self):
         self.max_chars = 5000

@@ -73,5 +73,11 @@ class AWSPolly:
             )
             sys.exit(-1)
 
+    def text_to_speech(self, text, filepath):
+        try:
+            self.run(text, filepath, random_voice=False)
+        except Exception as e:
+            print(f"An error occurred in text to speech conversion: {e}")
+
     def randomvoice(self):
         return random.choice(self.voices)

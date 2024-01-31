@@ -24,6 +24,11 @@ from video_creation.poll_screenshot import take_poll_question_screenshot
 from video_creation.poll_screenshot import take_poll_screenshot
 from video_creation.comment_screenshot import take_comment_screenshot
 
+import logging
+logging.basicConfig(level=logging.DEBUG, filename='debug.log')
+
+logging.debug('Starting application')
+
 __VERSION__ = "3.2.1"
 
 console = Console()
@@ -157,11 +162,15 @@ def main(json_file_path):
         cleanup(poll_id)
 
 if __name__ == "__main__":
-    ffmpeg_install()
-    directory = Path().absolute()
-    config = settings.check_toml(
-        f"{directory}/utils/.config.template.toml", f"{directory}/config.toml"
-    )
-    config is False and sys.exit()
-    json_file_path = "assets/bigquery/top_US_voted_polls_and_top_comments_for_each_of_these_polls.json"  # Replace with actual JSON file path
-    main(json_file_path)
+    try:
+        ffmpeg_install()
+        directory = Path().absolute()
+        config = settings.check_toml(
+            f"{directory}/utils/.config.template.toml", f"{directory}/config.toml"
+        )
+        config is False and sys.exit()
+        json_file_path = "assets/bigquery/top_US_voted_polls_and_top_comments_for_each_of_these_polls.json"  # Replace with actual JSON file path
+        main(json_file_path)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        raise
