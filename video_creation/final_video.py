@@ -47,6 +47,8 @@ def make_final_video(
     console.log("[bold blue] Poll Data: ",poll_data)
 
     poll_id = poll_data["pollId"]
+    category = poll_data["category"]
+    console.log("[bold blue] Video Category: ", category)
 
     # settings values
     W: Final[int] = int(settings.config["settings"]["resolution_w"])
@@ -73,7 +75,7 @@ def make_final_video(
         audio_clips.append(ffmpeg.input(poll_audio_path))
         audio_clips_durations.append(float(ffmpeg.probe(poll_audio_path)["format"]["duration"]))
 
-    answered_poll_audio_path = f"assets/video-resources/poll-audio.mp3"
+    answered_poll_audio_path = f"assets/video-resources/poll_audio.mp3"
     if os.path.exists(answered_poll_audio_path):
         audio_clips.append(ffmpeg.input(answered_poll_audio_path))
         audio_clips_durations.append(float(ffmpeg.probe(answered_poll_audio_path)["format"]["duration"]))
@@ -301,6 +303,7 @@ def make_final_video(
     pbar.close()
     # save_data(subreddit, filename + ".mp4", poll_title, idx, background_config["video"][2])
     save_data(subreddit, filename + ".mp4", poll_title, poll_id, background_config["video"][2])
+    console.log(f"[bold green] Saved poll data in videos.json file.")
 
 
     video_path = path
@@ -317,11 +320,11 @@ def make_final_video(
     audio_path = f"assets/temp/{poll_id}/extracted_audio.aac"
     processed_video_path = f"assets/temp/{poll_id}/processed_video.mp4" 
     intermediate_output_path = f"assets/temp/{poll_id}/intermediate_video.mp4" 
-    reencoded_outro_video_path = f"assets/video-resources/reencoded_outro_video copy.mp4"
+    reencoded_outro_video_path = f"assets/video-resources/reencoded_outro_video.mp4"
     reencoded_main_video_path = f"assets/temp/{poll_id}/reencoded_main_video.mp4"
 
     # Final output path
-    final_output_path = f"./results/{subreddit}/finalvideo/finalvideo_{poll_title}.mp4"
+    final_output_path = f"./results/{subreddit}/{category}/finalvideo_{poll_title}.mp4"
 
     # Ensure the directory exists
     os.makedirs(os.path.dirname(final_output_path), exist_ok=True)

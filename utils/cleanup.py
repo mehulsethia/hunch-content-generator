@@ -28,18 +28,19 @@ def cleanup_after_video_creation(poll_id: str, subreddit: str):
             shutil.rmtree(temp_poll_folder)
             print(f"Deleted temporary poll folder: {temp_poll_folder}")
 
-        # Delete files in results/{subreddit} except for the finalvideo folder
+        # Delete files in results/{subreddit} except for the finalvideo folder and category folders
         results_folder = os.path.join("results", subreddit)
-        final_video_folder = os.path.join(results_folder, "finalvideo")
+        #final_video_folder = os.path.join(results_folder, "finalvideo")
 
         for item in os.listdir(results_folder):
             item_path = os.path.join(results_folder, item)
-            if os.path.isfile(item_path) or (os.path.isdir(item_path) and item_path != final_video_folder):
-                if os.path.isdir(item_path):
-                    shutil.rmtree(item_path)
-                else:
-                    os.remove(item_path)
+            # Check if the item is a file and delete it
+            if os.path.isfile(item_path):
+                os.remove(item_path)
                 print(f"Deleted: {item_path}")
+            # If the item is a directory, skip it
+            elif os.path.isdir(item_path):
+                print(f"Skipping directory: {item_path}")
 
         print("Cleanup complete.")
     except Exception as e:

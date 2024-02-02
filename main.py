@@ -4,8 +4,12 @@ import os
 import time
 from pathlib import Path
 from playwright.sync_api import sync_playwright
+from utils.cleanup import cleanup
+from utils.cleanup import cleanup_after_video_creation
 import json
 import ffmpeg
+from utils.videos import save_data
+from video_creation.final_video_resources import name_normalize
 from utils import settings
 from rich.console import Console
 from utils import console
@@ -58,7 +62,8 @@ def main(json_file_path):
                 'pollId': poll_id,  # Add pollId here
                 'slug': item['slug'],
                 'question': item['question'],
-                'comments': []
+                'comments': [],
+                'category': item['categories']
             }
         polls[poll_id]['comments'].append({
             'commentId': item['commentId'],
@@ -67,7 +72,10 @@ def main(json_file_path):
         
     for poll_id, poll_data in polls.items():
         slug = poll_data['slug']
+        poll_title = poll_data["question"]
+        filename = f"{name_normalize(poll_title)[:251]}"
         poll_url = f"https://hunch.in/poll/{slug}"
+        category = poll_data["category"]
         comments = poll_data['comments']
 
         if video_exists(poll_id):
@@ -127,8 +135,8 @@ def main(json_file_path):
             if os.path.exists(comment_audio_path):
                 total_audio_length += float(ffmpeg.probe(comment_audio_path)["format"]["duration"])
         
-        # Add poll-audio.mp3 duration
-        answered_poll_audio_path = f"assets/video-resources/poll-audio.mp3"
+        # Add poll_audio.mp3 duration
+        answered_poll_audio_path = f"assets/video-resources/poll_audio.mp3"
         if os.path.exists(answered_poll_audio_path):
             answered_poll_duration = float(ffmpeg.probe(answered_poll_audio_path)["format"]["duration"])
             total_audio_length += answered_poll_duration
@@ -153,6 +161,18 @@ def main(json_file_path):
         length = total_audio_length
         console.log(f"[bold blue] Total audio length: {length} seconds")
 
+        # Skip video generation if total audio length is less than 15 seconds
+        if length < 15:
+            console.log(f"[bold red] Total audio length for poll ID {poll_id} is less than 15 seconds. Skipping video generation for this poll.")
+            subreddit = settings.config["reddit"]["thread"]["subreddit"]
+            save_data(subreddit, filename + ".mp4", poll_title, poll_id, bg_config["video"][2])
+            console.log(f"[bold red] Saved poll data in videos.json file.")
+            console.log("Removing temporary files 🗑")
+            cleanup_after_video_creation(poll_id, "hunch")
+            cleanups = cleanup(poll_id)
+            console.log(f"Removed {cleanups} temporary files 🗑")
+            continue  # Skip the rest of the loop and move to the next poll ID
+
         number_of_screenshots = 1 + len(comments)
 
         chop_background(bg_config, length, poll_id)
@@ -169,7 +189,7 @@ if __name__ == "__main__":
             f"{directory}/utils/.config.template.toml", f"{directory}/config.toml"
         )
         config is False and sys.exit()
-        json_file_path = "assets/bigquery/top_US_voted_polls_and_top_comments_for_each_of_these_polls.json"  # Replace with actual JSON file path
+        json_file_path = "assets/bigquery/top_US_voted_polls_and_top_comments_diff_categories.json"  # Replace with actual JSON file path
         main(json_file_path)
     except Exception as e:
         print(f"An error occurred: {e}")
