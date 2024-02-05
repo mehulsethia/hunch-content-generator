@@ -189,7 +189,7 @@ if __name__ == "__main__":
             f"{directory}/utils/.config.template.toml", f"{directory}/config.toml"
         )
         config is False and sys.exit()
-        json_file_path = "assets/bigquery/top_US_voted_polls_and_top_comments_diff_categories.json"  # Replace with actual JSON file path
+        json_file_path = "assets/bigquery/top_US_voted_polls_and_top_comments_except_dating_category.json"  # Replace with actual JSON file path
         main(json_file_path)
     except Exception as e:
         print(f"An error occurred: {e}")
