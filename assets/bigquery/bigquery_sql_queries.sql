@@ -213,6 +213,7 @@ TopLikedComments AS (
         FROM `partitioned_tables.comments_partition` c
         LEFT JOIN `partitioned_tables.users_partition` u ON c.userId = u.email
         WHERE c.isDeleted = FALSE AND u.isDeleted = FALSE
+        AND c.text NOT LIKE '%@%' AND c.text NOT LIKE '%http%' -- Exclude comments with "@" or "http"
     ) c
     JOIN TopVotedPolls p ON c.pollId = p.pollId
     ORDER BY c.rank ASC)
@@ -283,6 +284,7 @@ TopLikedComments AS (
         FROM `partitioned_tables.comments_partition` c
         LEFT JOIN `partitioned_tables.users_partition` u ON c.userId = u.email
         WHERE c.isDeleted = FALSE AND u.isDeleted = FALSE
+        AND c.text NOT LIKE '%@%' AND c.text NOT LIKE '%http%' -- Exclude comments with "@" or "http"
     ) c
     JOIN TopVotedPolls p ON c.pollId = p.pollId
     ORDER BY c.rank ASC)
